@@ -2,19 +2,22 @@
   "name": "johnny-five",
   "version": "1.0.0",
   "description": "",
-  "main": "flex.js",
+  "main": "sketch.js",
   "scripts": {
-    "start": "nodemon flex.js",
+    "start": "nodemon sketch.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
     "dotenv": "^16.0.3",
+    "express": "^4.18.2",
+    "node-p5": "^1.0.4",
     "nodemon": "^2.0.20",
     "openai": "^3.1.0",
     "openai-api": "^1.3.1",
     "random-words": "^1.2.0",
-    "rita": "^2.8.31"
+    "rita": "^2.8.31",
+    "uniq": "^1.0.1"
   }
 }

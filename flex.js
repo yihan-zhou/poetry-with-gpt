@@ -1,97 +1,92 @@
-// Get a list of pulse data
-// send to GPT3 API
+// TODOs:
+// Get the result from j5
 // Iteration: have some pre-selected words, add the pulse data to embeddings
+// Able to generate an poem and some visuals using p5
 
 
-const axios = require('axios');
+////////////////////////////////Get needed libraries////////////////////////////////
+const {execSync} = require('child_process'); // For the sleep function
+const axios = require('axios'); // For Axios, a promise-based HTTP Client for node.js\. 
 require('dotenv').config()
 
-let RiTa = require('rita');
+var randomWords = require('random-words'); // For getting a random word from an integar
+let RiTa = require('rita'); // For Markov-based text generation
 
-var randomWords = require('random-words');
 
-const OpenAI = require('openai-api');
+// For OPENAI Api
+const OpenAI = require('openai-api'); 
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 const openai = new OpenAI(OPENAI_API_KEY);
-
 const client = axios.create({
   headers: { 'Authorization': 'Bearer ' + OPENAI_API_KEY }
 });
+////////////////////////////////Get needed libraries////////////////////////////////
 
 
+// get pulse
+const {Board, Sensor} = require("johnny-five");
+const board = new Board();
+var value_list = [];
+
+
+function flex(){
+  board.on("ready", function() {
+    const flex = new Sensor({
+    pin: "A2"
+    });
+    // Inject the `flex` hardware into
+    // the Repl instance's context;
+    // allows direct command line access
+    board.repl.inject({ flex });
+    flex.on("change", value => add_value(value));
+  });
+};
+
+// Getting the current value
+function add_value(value){
+  if (value_list.length<=100){
+    value_list.push(value);
+  }else{
+    value_list =[];
+    value_list.push(value);
+    console.log(getWord(value));
+    execSync('sleep 10');
+    }
+}
+
+// Getting the result from openaiapi
+async function getWord(value){
+  var value_tring = "";
+  const value_list = [];
+  value_list.push(randomWords(flex.value));
+  value_tring = value_list.slice(-3).join(" ");
+  result = callopenai(value_tring);
+  return await result
+}
+
+// Using OPENAI, passing a prompt and getting a result
 function callopenai(value_tring){
   const params = {
-    "prompt": value_tring, 
-    "max_tokens": 10
-  }  
-  console.log("\n");
-  console.log("\n");
-  console.log("Current prompt: " + params.prompt)
-  client.post('https://api.openai.com/v1/engines/davinci/completions', params)
+    "model": "text-davinci-002",
+    "prompt": "TITLE & TOPIC: hallucinate titles and first lines. BODY: Write the body of the poem, using '"+value_tring+"' as a keyword and examples of contemporary free verse poetry as inspiration. REAPER: Write a satisfying end to the poem",
+    "max_tokens": 156,
+    "temperature": 0.7,
+    "top_p": 1,
+    "frequency_penalty": 0,
+    "presence_penalty": 0,
+  } ;
+  // console.log("Current prompt: " + params.prompt);
+  client.post('https://api.openai.com/v1/completions', params)
   .then(result => {
     console.log("\n");
-    console.log("Current result: "+ params.prompt + result.data.choices[0].text);
+    console.log("Current result: "+ result.data.choices[0].text);
 }).catch(err => {
   console.log(err);
 });
 }
 
-// get pulse
-const {Board, Sensor} = require("johnny-five");
-const board = new Board();
-const value_list = [];
-var current_value = 0;
-var previous_value = 0;
-var value_tring = "";
-
-
-
-function flex(){
-board.on("ready", function() {
-  const flex = new Sensor({
-  pin: "A2"
-  });
-
-  // Inject the `flex` hardware into
-  // the Repl instance's context;
-  // allows direct command line access
-  board.repl.inject({ flex });
-
-  flex.on("change", value => {
-    current_value = flex.value;
-    if (current_value==previous_value){
-      // console.log(current_value+' equals to '+previous_value);
-    }else if(current_value==previous_value+1){
-      // console.log(current_value+' incresed 1');
-    }else if(current_value==previous_value-1){
-      // console.log(current_value+' decreased 1');
-    } else{
-      value_list.push(randomWords(flex.value));
-      // console.log(value_list[0].slice(-2));
-      value_tring = value_list[0].slice(-3).join(" ");
-      callopenai(value_tring);
-      
-    }
-    previous_value = flex.value;
-    });
-    setTimeout(board.off, 10000);
-});
-};
-
-
 flex();
-
 
 
 // openai API keys
 // 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
-
-
-// function getWord(value){
-//   var value_tring = "";
-//   const value_list = [];
-//   value_list.push(randomWords(flex.value));
-//   value_tring = value_list.slice(-3).join(" ");
-//   return callopenai(value_tring)
-// }
-// getWord(10)
